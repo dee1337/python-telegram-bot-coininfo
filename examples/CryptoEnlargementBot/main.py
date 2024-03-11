@@ -72,6 +72,7 @@ async def watch_ath(update: Update, context: ContextTypes.DEFAULT_TYPE):
     update_rate = 60
     async def watch_ath_loop():
         # Schleife für die periodische Überprüfung
+        global last_ath_value
         while True:
             current_ath = coinmarketcap.get_bitcoin_ath() #-10000 #-10000 = MOCK
             # Überprüfen, ob sich der ATH-Preis geändert hat
