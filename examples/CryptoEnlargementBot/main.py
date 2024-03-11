@@ -12,6 +12,8 @@ load_dotenv()
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 WATCHING = False
 
+# Variable zum Speichern des zuletzt gespeicherten ATH-Preises
+last_ath_value = coinmarketcap.get_bitcoin_ath()
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -35,9 +37,9 @@ async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def getCurrentATH(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """ shows the current ATH + ATH Date"""
-    last_ath = coinmarketcap.get_bitcoin_ath_date()
+    last_ath_date = coinmarketcap.get_bitcoin_ath_date()
     bitcoin_hi = coinmarketcap.get_bitcoin_ath()
-    await context.bot.send_message(chat_id=update.effective_chat.id, text="Last BTC ATH ($"+str(bitcoin_hi)+") was on "+last_ath)
+    await context.bot.send_message(chat_id=update.effective_chat.id, text="Last BTC ATH ($"+str(bitcoin_hi)+") was on "+last_ath_date)
 
 async def pic(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """ send media"""
@@ -61,6 +63,7 @@ async def audio(update: Update, context: ContextTypes.DEFAULT_TYPE):
     #await context.bot.send_audio(chat_id=update.effective_chat.id, document='media/ratschbing.mp3')
 
 async def watch_ath(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global last_ath_value
     print("WATCHING:", WATCHING)
     if (WATCHING):
         await context.bot.send_message(chat_id=update.effective_chat.id, text="already watching for ATH!")
@@ -68,23 +71,20 @@ async def watch_ath(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text="started watching ATH (60 sec frequency)")
     update_rate = 60
     async def watch_ath_loop():
-
-        # Variable zum Speichern des zuletzt gespeicherten ATH-Preises
-        last_ath = coinmarketcap.get_bitcoin_ath()
         # Schleife für die periodische Überprüfung
         while True:
             current_ath = coinmarketcap.get_bitcoin_ath() #-10000 #-10000 = MOCK
             # Überprüfen, ob sich der ATH-Preis geändert hat
-            if current_ath != last_ath:
-                last_ath = coinmarketcap.get_bitcoin_ath_date()
+            if current_ath > last_ath_value:
                 bitcoin_hi = coinmarketcap.get_bitcoin_ath()
-                #getCurrentATH(update, context)
                 last_ath = coinmarketcap.get_bitcoin_ath_date()
                 bitcoin_hi = coinmarketcap.get_bitcoin_ath()
                 await context.bot.send_message(chat_id=update.effective_chat.id,
                                                text="DingDingDing! New BTC ATH: $" + str(bitcoin_hi) + " (" + last_ath + ")")
                 #await context.bot.send_message(chat_id=update.effective_chat.id, text="Last BTC ATH ($" + str(bitcoin_hi) + ") was on " + last_ath)
-                print(f'Bitcoin ATH hat sich geändert! Neuer ATH: ${current_ath}')
+
+                print(f'Bitcoin ATH hat sich geändert! Von {last_ath_value} zum neuen ATH: ${current_ath}')
+                last_ath_value = bitcoin_hi
                 print(f'Bitcoin ATH hat sich geändert am {current_ath}')
             else:
                 print('Bitcoin ATH hat sich nicht geändert.')
