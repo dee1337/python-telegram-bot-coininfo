@@ -1,12 +1,13 @@
 import asyncio
 import logging
 import time
-import os
-import requests
-from bs4 import BeautifulSoup
+import asyncio
 from telegram import Update, InputMediaDocument, InputMediaAudio
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
+import os
 from dotenv import load_dotenv
+import requests
+from bs4 import BeautifulSoup
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -29,7 +30,7 @@ def init_ath():
 
 async def get_and_check_ath(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """ returns True if ATH was raised, False otherwise """
-    try:
+    try:  #
         global last_ath_value
         response = requests.get(URL + 'bitcoin')
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -38,7 +39,7 @@ async def get_and_check_ath(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if last_ath_value < ath_price:
             await context.bot.send_message(chat_id=update.effective_chat.id,
-                                           text="DingDingDing! Old ATH: ${:.2f} -> NEW ATH ${:.2f}".format(last_ath_value, ath_price ))
+                                           text="DingDingDing! New ATH: ${:.2f} -> ${:.2f}".format(last_ath_value, ath_price ))
             print(f"{last_ath_value} < {ath_price}:")
             last_ath_value = ath_price
             return True  # New ATH detected
@@ -75,9 +76,9 @@ async def watch(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def fake_ath(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """ writes an introductional message from the bot """
     global last_ath_value
-    last_ath_value -= 1337
+    last_ath_value += 1337
     await context.bot.send_message(chat_id=update.effective_chat.id,
-                                   text="Faking ATH: Lowering locally saved ATH to $"+str(last_ath_value))
+                                   text="Faking ATH: Setting ATH to $"+str(last_ath_value))
 
 async def reset_ath(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """ writes an introductional message from the bot """
@@ -103,15 +104,14 @@ async def getCurrentATH(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """ shows the current ATH + ATH Date"""
     await context.bot.send_message(chat_id=update.effective_chat.id,
                                    text="Last BTC ATH: $" + str(last_ath_value))
-
-async def main_loop(update, context):
+async def main_loop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("started main loop")
     print(f"started at {time.strftime('%X')}")
     while True:
         global WATCHING
         WATCHING = True
         print(f"\tLOOP started at {time.strftime('%X')}")
-        new_ath = await get_and_check_ath(update, context)
+        new_ath = await get_and_check_ath(Update, ContextTypes.DEFAULT_TYPE)
         if new_ath:
             print("\tNew ATH detected!")
         else:
@@ -119,11 +119,7 @@ async def main_loop(update, context):
         await asyncio.sleep(10)
     print(f"finished at {time.strftime('%X')}")
 
-async def main_loop_wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    #await main_loop()
-    await context.bot.send_message(chat_id=update.effective_chat.id,
-                                   text="Started monitoring BTC-ATH")
-    asyncio.create_task(main_loop(update, context))
+
 
 if __name__ == '__main__':
     load_dotenv()
@@ -165,7 +161,12 @@ if __name__ == '__main__':
     media_handler = CommandHandler('media', media)
     application.add_handler(media_handler)
 
-    realtime_handler = CommandHandler('realtime', main_loop_wrapper)
+    realtime_handler = CommandHandler('realtime', main_loop)
     application.add_handler(realtime_handler)
 
     application.run_polling(allowed_updates=Update.ALL_TYPES)
+    #asyncio.run(main())
+
+
+
+
